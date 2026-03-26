@@ -1,4 +1,4 @@
-# 烃类化合物交互命名工具
+# Hydrocarbon Namer
 
 一个基于 React + TypeScript + Vite 的静态网页应用，用于绘制链状碳氢化合物并给出系统命名结果。
 
