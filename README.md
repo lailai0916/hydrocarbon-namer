@@ -1,43 +1,46 @@
-# Hydrocarbon Namer
+<div align="center">
+  <h1>Hydrocarbon Namer</h1>
+  <p>English | <a href="README.zh-Hans.md">简体中文</a></p>
+</div>
 
-一个基于 React + TypeScript + Vite 的静态网页应用，用于绘制链状碳氢化合物并给出系统命名结果。
+A static web app built with React + TypeScript + Vite for drawing chain hydrocarbons and producing their systematic names.
 
-## 功能范围
+## Features
 
-- 交互式绘制碳骨架与单/双/三键
-- 自动分析并输出命名结果
-- 支持撤销、重做、清空
-- 仅支持链状烃：烷烃、烯烃、炔烃与烯炔烃
+- Interactive drawing of carbon skeletons with single / double / triple bonds
+- Automatic analysis and naming output
+- Undo, redo, and clear
+- Chain hydrocarbons only: alkanes, alkenes, alkynes, and enynes
 
-## 本地开发
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-构建生产版本：
+Build for production:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## GitHub Pages 自动部署
+## Deployment (GitHub Pages)
 
-仓库已配置 GitHub Actions 工作流：
+The repository ships a GitHub Actions workflow:
 
-- 工作流文件：`.github/workflows/deploy-pages.yml`
-- 触发条件：推送到 `main` 分支或手动触发
-- 发布产物：`dist/`
+- Workflow file: `.github/workflows/deploy-pages.yml`
+- Triggers: push to `main`, or manual dispatch
+- Published artifact: `dist/`
 
-首次启用时请在 GitHub 仓库中确认：
+On first setup, in the GitHub repository:
 
-1. 打开 `Settings` -> `Pages`
-2. `Build and deployment` 的 `Source` 选择 `GitHub Actions`
+1. Open `Settings` → `Pages`
+2. Under `Build and deployment`, set `Source` to `GitHub Actions`
 
-部署完成后，访问地址通常为：
+The deployed URL is usually `https://<your-username>.github.io/<repo>/`. The Vite config already adapts to the repository sub-path, so there is no need to set `base` manually.
 
-- `https://<你的 GitHub 用户名>.github.io/<仓库名>/`
+## License
 
-当前项目已在 Vite 配置中自动适配仓库子路径，无需手动改 `base`。
+This project is licensed under [MIT License](LICENSE).
