@@ -1,6 +1,12 @@
 <div align="center">
   <h1>Hydrocarbon Namer</h1>
   <p>English | <a href="README.zh-Hans.md">简体中文</a></p>
+  <p>
+    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/hydrocarbon-namer/deploy-pages.yml?style=flat-square" alt="deployment" />
+    <img src="https://img.shields.io/github/last-commit/lailai0916/hydrocarbon-namer?style=flat-square" alt="last commit" />
+    <img src="https://img.shields.io/github/languages/top/lailai0916/hydrocarbon-namer?style=flat-square" alt="top language" />
+    <img src="https://img.shields.io/github/license/lailai0916/hydrocarbon-namer?style=flat-square" alt="license" />
+  </p>
 </div>
 
 A static web app built with React + TypeScript + Vite for drawing chain hydrocarbons and producing their systematic names.
@@ -40,6 +46,16 @@ On first setup, in the GitHub repository:
 2. Under `Build and deployment`, set `Source` to `GitHub Actions`
 
 The deployed URL is usually `https://<your-username>.github.io/<repo>/`. The Vite config already adapts to the repository sub-path, so there is no need to set `base` manually.
+
+## Structure
+
+```text
+src/App.tsx                         # editor state and naming workflow
+src/index.css                       # interface and molecular drawing styles
+src/main.tsx                        # React entrypoint
+public/                             # favicon and shared icons
+vite.config.ts                      # build and Pages base-path configuration
+```
 
 ## License
 

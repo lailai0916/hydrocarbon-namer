@@ -1,7 +1,9 @@
 {
-  "name": "Hydrocarbon Namer",
+  "name": "hydrocarbon-namer",
   "private": true,
   "version": "0.0.0",
+  "description": "Interactive systematic naming tool for chain hydrocarbons",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
