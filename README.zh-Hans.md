@@ -9,16 +9,18 @@
   </p>
 </div>
 
+## 网站简介
+
 一个基于 React + TypeScript + Vite 的静态网页应用，用于绘制链状碳氢化合物并给出系统命名结果。
 
-## 功能范围
+## 网站特性
 
 - 交互式绘制碳骨架与单/双/三键
 - 自动分析并输出命名结果
 - 支持撤销、重做、清空
 - 仅支持链状烃：烷烃、烯烃、炔烃与烯炔烃
 
-## 本地开发
+## 快速开始
 
 ```bash
 npm install
@@ -32,7 +34,7 @@ npm run build
 npm run preview
 ```
 
-## GitHub Pages 自动部署
+## 网站部署
 
 仓库已配置 GitHub Actions 工作流：
 
@@ -47,16 +49,29 @@ npm run preview
 
 部署完成后访问地址通常为 `https://<你的 GitHub 用户名>.github.io/<仓库名>/`。当前项目已在 Vite 配置中自动适配仓库子路径，无需手动改 `base`。
 
-## 结构
+## 项目结构
 
-```text
-src/App.tsx                         # 编辑器状态与命名流程
-src/index.css                       # 界面与分子绘制样式
-src/main.tsx                        # React 入口
-public/                             # favicon 与共享图标
-vite.config.ts                      # 构建与 Pages 子路径配置
+```bash
+hydrocarbon-namer/
+├── src/                            # 源代码
+│   ├── components/                 # 界面组件
+│   ├── engine/                     # 烃类命名引擎
+│   ├── hooks/                      # 共享 React Hook
+│   ├── model/                      # 分子数据模型
+│   ├── types/                      # TypeScript 类型
+│   ├── utils/                      # 共享工具
+│   ├── App.tsx                     # 编辑器状态与命名流程
+│   ├── index.css                   # 界面与绘制样式
+│   └── main.tsx                    # React 入口
+├── public/                         # Favicon 与共享图标
+├── index.html                      # 应用入口页面
+├── package-lock.json               # 依赖锁定文件
+├── package.json                    # 依赖配置
+├── tsconfig.json                   # TypeScript 配置
+├── vite.config.ts                  # Vite 与 Pages 配置
+└── LICENSE                         # 代码许可协议
 ```
 
 ## 许可协议
 
-本项目采用 [MIT 许可协议](LICENSE)。
+本项目代码采用 [MIT 许可协议](LICENSE)。

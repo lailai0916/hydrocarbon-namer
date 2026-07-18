@@ -9,16 +9,18 @@
   </p>
 </div>
 
+## Website Introduction
+
 A static web app built with React + TypeScript + Vite for drawing chain hydrocarbons and producing their systematic names.
 
-## Features
+## Website Features
 
 - Interactive drawing of carbon skeletons with single / double / triple bonds
 - Automatic analysis and naming output
 - Undo, redo, and clear
 - Chain hydrocarbons only: alkanes, alkenes, alkynes, and enynes
 
-## Local Development
+## Getting Started
 
 ```bash
 npm install
@@ -32,7 +34,7 @@ npm run build
 npm run preview
 ```
 
-## Deployment (GitHub Pages)
+## Site Deployment
 
 The repository ships a GitHub Actions workflow:
 
@@ -47,16 +49,29 @@ On first setup, in the GitHub repository:
 
 The deployed URL is usually `https://<your-username>.github.io/<repo>/`. The Vite config already adapts to the repository sub-path, so there is no need to set `base` manually.
 
-## Structure
+## Project Structure
 
-```text
-src/App.tsx                         # editor state and naming workflow
-src/index.css                       # interface and molecular drawing styles
-src/main.tsx                        # React entrypoint
-public/                             # favicon and shared icons
-vite.config.ts                      # build and Pages base-path configuration
+```bash
+hydrocarbon-namer/
+├── src/                            # Source code
+│   ├── components/                 # Interface components
+│   ├── engine/                     # Hydrocarbon naming engine
+│   ├── hooks/                      # Shared React hooks
+│   ├── model/                      # Molecular data model
+│   ├── types/                      # TypeScript types
+│   ├── utils/                      # Shared utilities
+│   ├── App.tsx                     # Editor state and naming workflow
+│   ├── index.css                   # Interface and drawing styles
+│   └── main.tsx                    # React entry point
+├── public/                         # Favicon and shared icons
+├── index.html                      # Application entry page
+├── package-lock.json               # Dependency lock file
+├── package.json                    # Dependency configuration
+├── tsconfig.json                   # TypeScript configuration
+├── vite.config.ts                  # Vite and Pages configuration
+└── LICENSE                         # Code license
 ```
 
 ## License
 
-This project is licensed under [MIT License](LICENSE).
+This project's code is licensed under [MIT License](LICENSE).
