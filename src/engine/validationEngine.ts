@@ -1,4 +1,5 @@
 import type { Molecule } from '../types/molecule'
+import type { Language } from '../i18n'
 import { buildAdjacency, calculateAtomValence, findConnectedComponents, getBondKey } from '../utils/graphUtils'
 
 export interface ValidationResult {
@@ -9,9 +10,7 @@ export interface ValidationResult {
   details: string[]
 }
 
-const makeResult = (
-  partial: Omit<ValidationResult, 'isEmpty'> & { isEmpty?: boolean },
-): ValidationResult => {
+const makeResult = (partial: Omit<ValidationResult, 'isEmpty'> & { isEmpty?: boolean }): ValidationResult => {
   return {
     isEmpty: partial.isEmpty ?? false,
     isLegal: partial.isLegal,
@@ -21,13 +20,43 @@ const makeResult = (
   }
 }
 
-export const validateMolecule = (molecule: Molecule): ValidationResult => {
+const copy = {
+  en: {
+    empty: 'Add carbon atoms and bonds to the canvas.',
+    unsupported: 'This structure is outside the supported scope and cannot currently be named.',
+    hydrocarbonOnly: 'Only alkane, alkene, and alkyne systems composed of carbon and hydrogen are supported.',
+    illegal: 'The structure is invalid and cannot be named.',
+    unknownAtom: 'A bond is connected to an unknown atom.',
+    selfBond: 'An atom cannot be bonded to itself.',
+    duplicateBond: 'Only one bond may exist between the same pair of carbon atoms.',
+    valence: (id: string) => `Carbon atom ${id} has a total valence greater than 4.`,
+    disconnected: 'The structure contains multiple disconnected fragments.',
+    acyclicOnly: 'Only acyclic hydrocarbons are currently supported; cyclic structures are not supported.',
+    valid: 'The structure is valid and can be named.',
+  },
+  zh: {
+    empty: '请在画板中添加碳原子并连键',
+    unsupported: '当前结构不属于支持范围，暂不支持命名。',
+    hydrocarbonOnly: '仅支持由碳和氢构成的烷/烯/炔体系。',
+    illegal: '结构非法，无法命名',
+    unknownAtom: '存在连接到未知原子的化学键。',
+    selfBond: '同一原子不能与自身成键。',
+    duplicateBond: '同一对碳原子之间只能存在一条键。',
+    valence: (id: string) => `碳原子 ${id} 的总价超过 4。`,
+    disconnected: '当前图包含多个不连通片段。',
+    acyclicOnly: '当前版本仅支持链状烃，不支持环状结构。',
+    valid: '结构合法，可命名',
+  },
+} as const
+
+export const validateMolecule = (molecule: Molecule, language: Language = 'en'): ValidationResult => {
+  const text = copy[language]
   if (molecule.atoms.length === 0) {
     return makeResult({
       isEmpty: true,
       isLegal: true,
       isSupported: true,
-      statusText: '请在画板中添加碳原子并连键',
+      statusText: text.empty,
       details: [],
     })
   }
@@ -36,8 +65,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
     return makeResult({
       isLegal: true,
       isSupported: false,
-      statusText: '当前结构不属于支持范围，暂不支持命名。',
-      details: ['仅支持由碳和氢构成的烷/烯/炔体系。'],
+      statusText: text.unsupported,
+      details: [text.hydrocarbonOnly],
     })
   }
 
@@ -49,8 +78,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
       return makeResult({
         isLegal: false,
         isSupported: false,
-        statusText: '结构非法，无法命名',
-        details: ['存在连接到未知原子的化学键。'],
+        statusText: text.illegal,
+        details: [text.unknownAtom],
       })
     }
 
@@ -58,8 +87,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
       return makeResult({
         isLegal: false,
         isSupported: false,
-        statusText: '结构非法，无法命名',
-        details: ['同一原子不能与自身成键。'],
+        statusText: text.illegal,
+        details: [text.selfBond],
       })
     }
 
@@ -68,8 +97,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
       return makeResult({
         isLegal: false,
         isSupported: false,
-        statusText: '结构非法，无法命名',
-        details: ['同一对碳原子之间只能存在一条键。'],
+        statusText: text.illegal,
+        details: [text.duplicateBond],
       })
     }
 
@@ -84,8 +113,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
       return makeResult({
         isLegal: false,
         isSupported: false,
-        statusText: '结构非法，无法命名',
-        details: [`碳原子 ${atom.id.slice(0, 6)} 的总价超过 4。`],
+        statusText: text.illegal,
+        details: [text.valence(atom.id.slice(0, 6))],
       })
     }
   }
@@ -95,8 +124,8 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
     return makeResult({
       isLegal: false,
       isSupported: false,
-      statusText: '结构非法，无法命名',
-      details: ['当前图包含多个不连通片段。'],
+      statusText: text.illegal,
+      details: [text.disconnected],
     })
   }
 
@@ -105,15 +134,15 @@ export const validateMolecule = (molecule: Molecule): ValidationResult => {
     return makeResult({
       isLegal: true,
       isSupported: false,
-      statusText: '当前结构不属于支持范围，暂不支持命名。',
-      details: ['当前版本仅支持链状烃，不支持环状结构。'],
+      statusText: text.unsupported,
+      details: [text.acyclicOnly],
     })
   }
 
   return makeResult({
     isLegal: true,
     isSupported: true,
-    statusText: '结构合法，可命名',
+    statusText: text.valid,
     details: [],
   })
 }

@@ -24,4 +24,4 @@ export interface Molecule {
 
 export type ToolMode = 'select' | 'add-carbon' | 'bond-1' | 'bond-2' | 'bond-3' | 'delete'
 
-export type MoleculeType = '烷烃' | '烯烃' | '炔烃' | '烯炔烃'
+export type MoleculeType = 'alkane' | 'alkene' | 'alkyne' | 'enyne'

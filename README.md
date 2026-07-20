@@ -19,6 +19,8 @@ A static web app built with React + TypeScript + Vite for drawing chain hydrocar
 - Automatic analysis and naming output
 - Undo, redo, and clear
 - Chain hydrocarbons only: alkanes, alkenes, alkynes, and enynes
+- Complete English and Simplified Chinese interface and naming output, with English as the default
+- System theme by default, plus explicit light and dark modes
 
 ## Getting Started
 
@@ -61,6 +63,7 @@ hydrocarbon-namer/
 │   ├── types/                      # TypeScript types
 │   ├── utils/                      # Shared utilities
 │   ├── App.tsx                     # Editor state and naming workflow
+│   ├── i18n.tsx                    # English and Chinese interface copy
 │   ├── index.css                   # Interface and drawing styles
 │   └── main.tsx                    # React entry point
 ├── public/                         # Favicon and shared icons

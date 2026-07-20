@@ -1,4 +1,5 @@
 import type { AtomId, Molecule, MoleculeType } from '../types/molecule'
+import type { Language } from '../i18n'
 import { buildAdjacency, enumerateAllSimplePathsInTree, getBondBetween } from '../utils/graphUtils'
 
 interface SubstituentToken {
@@ -75,6 +76,29 @@ const CHAIN_ROOT: Record<number, string> = {
   10: '癸',
 }
 
+const ENGLISH_CHAIN_ROOT: Record<number, string> = {
+  1: 'meth',
+  2: 'eth',
+  3: 'prop',
+  4: 'but',
+  5: 'pent',
+  6: 'hex',
+  7: 'hept',
+  8: 'oct',
+  9: 'non',
+  10: 'dec',
+  11: 'undec',
+  12: 'dodec',
+  13: 'tridec',
+  14: 'tetradec',
+  15: 'pentadec',
+  16: 'hexadec',
+  17: 'heptadec',
+  18: 'octadec',
+  19: 'nonadec',
+  20: 'eicos',
+}
+
 const CHINESE_DIGITS: Record<number, string> = {
   0: '零',
   1: '一',
@@ -98,6 +122,18 @@ const MULTIPLIER: Record<number, string> = {
   8: '八',
   9: '九',
   10: '十',
+}
+
+const ENGLISH_MULTIPLIER: Record<number, string> = {
+  2: 'di',
+  3: 'tri',
+  4: 'tetra',
+  5: 'penta',
+  6: 'hexa',
+  7: 'hepta',
+  8: 'octa',
+  9: 'nona',
+  10: 'deca',
 }
 
 const ALKYL_SORT_ROOT: Record<number, string> = {
@@ -132,7 +168,11 @@ const toChineseNumber = (n: number): string => {
   return String(n)
 }
 
-const getChainRoot = (carbonCount: number): string => {
+const getChainRoot = (carbonCount: number, language: Language): string => {
+  if (language === 'en') {
+    return ENGLISH_CHAIN_ROOT[carbonCount] ?? `carbon-${carbonCount}`
+  }
+
   if (carbonCount in CHAIN_ROOT) {
     return CHAIN_ROOT[carbonCount]
   }
@@ -140,12 +180,14 @@ const getChainRoot = (carbonCount: number): string => {
   return toChineseNumber(carbonCount)
 }
 
-const getMultiplier = (count: number): string => {
+const getMultiplier = (count: number, language: Language): string => {
   if (count <= 1) {
     return ''
   }
 
-  return MULTIPLIER[count] ?? `${toChineseNumber(count)}`
+  return language === 'en'
+    ? (ENGLISH_MULTIPLIER[count] ?? `${count}-`)
+    : (MULTIPLIER[count] ?? `${toChineseNumber(count)}`)
 }
 
 const getAlkylSortRoot = (carbonCount: number): string => {
@@ -171,7 +213,10 @@ const isComplexSubstituentName = (name: string): boolean => {
   return /[-,()]/.test(name)
 }
 
-const formatSubstituents = (items: SubstituentToken[]): {
+const formatSubstituents = (
+  items: SubstituentToken[],
+  language: Language
+): {
   text: string
   locants: number[]
   signature: string
@@ -204,19 +249,13 @@ const formatSubstituents = (items: SubstituentToken[]): {
   const parts: FormattedSubstituent[] = []
 
   for (const group of grouped.values()) {
-    const locants = group.tokens
-      .map((token) => token.locant)
-      .sort((left, right) => left - right)
+    const locants = group.tokens.map((token) => token.locant).sort((left, right) => left - right)
 
     const count = group.tokens.length
-    const multiplier = getMultiplier(count)
-    const wrappedName = isComplexSubstituentName(group.name)
-      ? `(${group.name})`
-      : group.name
+    const multiplier = getMultiplier(count, language)
+    const wrappedName = isComplexSubstituentName(group.name) ? `(${group.name})` : group.name
 
-    const text = count > 1
-      ? `${locants.join(',')}-${multiplier}${wrappedName}`
-      : `${locants[0]}-${wrappedName}`
+    const text = count > 1 ? `${locants.join(',')}-${multiplier}${wrappedName}` : `${locants[0]}-${wrappedName}`
 
     parts.push({
       text,
@@ -234,9 +273,7 @@ const formatSubstituents = (items: SubstituentToken[]): {
     return compareNumberArray(left.locants, right.locants)
   })
 
-  const allLocants = items
-    .map((item) => item.locant)
-    .sort((left, right) => left - right)
+  const allLocants = items.map((item) => item.locant).sort((left, right) => left - right)
 
   return {
     text: parts.map((part) => part.text).join('-'),
@@ -245,10 +282,35 @@ const formatSubstituents = (items: SubstituentToken[]): {
   }
 }
 
-const buildParentName = (length: number, doubleLocants: number[], tripleLocants: number[]): string => {
-  const root = getChainRoot(length)
-  const doubleMultiplier = getMultiplier(doubleLocants.length)
-  const tripleMultiplier = getMultiplier(tripleLocants.length)
+const buildParentName = (
+  length: number,
+  doubleLocants: number[],
+  tripleLocants: number[],
+  language: Language
+): string => {
+  const root = getChainRoot(length, language)
+  const doubleMultiplier = getMultiplier(doubleLocants.length, language)
+  const tripleMultiplier = getMultiplier(tripleLocants.length, language)
+
+  if (language === 'en') {
+    if (doubleLocants.length === 0 && tripleLocants.length === 0) return `${root}ane`
+    if (doubleLocants.length > 0 && tripleLocants.length === 0) {
+      if (length <= 3 && doubleLocants.length === 1) return `${root}ene`
+      return doubleLocants.length === 1
+        ? `${root}-${doubleLocants[0]}-ene`
+        : `${root}a-${doubleLocants.join(',')}-${doubleMultiplier}ene`
+    }
+    if (doubleLocants.length === 0) {
+      if (length <= 3 && tripleLocants.length === 1) return `${root}yne`
+      return tripleLocants.length === 1
+        ? `${root}-${tripleLocants[0]}-yne`
+        : `${root}a-${tripleLocants.join(',')}-${tripleMultiplier}yne`
+    }
+    const linkingVowel = doubleLocants.length > 1 || tripleLocants.length > 1 ? 'a' : ''
+    const enSuffix = doubleLocants.length === 1 ? 'en' : `${doubleMultiplier}en`
+    const yneSuffix = tripleLocants.length === 1 ? 'yne' : `${tripleMultiplier}yne`
+    return `${root}${linkingVowel}-${doubleLocants.join(',')}-${enSuffix}-${tripleLocants.join(',')}-${yneSuffix}`
+  }
 
   if (doubleLocants.length === 0 && tripleLocants.length === 0) {
     return `${root}烷`
@@ -265,10 +327,32 @@ const buildParentName = (length: number, doubleLocants: number[], tripleLocants:
   return `${doubleLocants.join(',')}-${root}${doubleMultiplier}烯-${tripleLocants.join(',')}-${tripleMultiplier}炔`
 }
 
-const buildRadicalBaseName = (length: number, doubleLocants: number[], tripleLocants: number[]): string => {
-  const root = getChainRoot(length)
-  const doubleMultiplier = getMultiplier(doubleLocants.length)
-  const tripleMultiplier = getMultiplier(tripleLocants.length)
+const buildRadicalBaseName = (
+  length: number,
+  doubleLocants: number[],
+  tripleLocants: number[],
+  language: Language
+): string => {
+  const root = getChainRoot(length, language)
+  const doubleMultiplier = getMultiplier(doubleLocants.length, language)
+  const tripleMultiplier = getMultiplier(tripleLocants.length, language)
+
+  if (language === 'en') {
+    if (doubleLocants.length === 0 && tripleLocants.length === 0) {
+      return getAlkylSortRoot(length)
+    }
+    if (doubleLocants.length > 0 && tripleLocants.length === 0) {
+      const suffix = doubleLocants.length === 1 ? 'en' : `${doubleMultiplier}en`
+      return `${root}-${doubleLocants.join(',')}-${suffix}-1-yl`
+    }
+    if (doubleLocants.length === 0) {
+      const suffix = tripleLocants.length === 1 ? 'yn' : `${tripleMultiplier}yn`
+      return `${root}-${tripleLocants.join(',')}-${suffix}-1-yl`
+    }
+    const enSuffix = doubleLocants.length === 1 ? 'en' : `${doubleMultiplier}en`
+    const ynSuffix = tripleLocants.length === 1 ? 'yn' : `${tripleMultiplier}yn`
+    return `${root}-${doubleLocants.join(',')}-${enSuffix}-${tripleLocants.join(',')}-${ynSuffix}-1-yl`
+  }
 
   if (doubleLocants.length === 0 && tripleLocants.length === 0) {
     return `${root}基`
@@ -287,23 +371,36 @@ const buildRadicalBaseName = (length: number, doubleLocants: number[], tripleLoc
 
 const getMoleculeType = (doubleCount: number, tripleCount: number): MoleculeType => {
   if (doubleCount > 0 && tripleCount > 0) {
-    return '烯炔烃'
+    return 'enyne'
   }
 
   if (doubleCount > 0) {
-    return '烯烃'
+    return 'alkene'
   }
 
   if (tripleCount > 0) {
-    return '炔烃'
+    return 'alkyne'
   }
 
-  return '烷烃'
+  return 'alkane'
 }
 
 const createRadicalNamer = (
   adjacency: ReturnType<typeof buildAdjacency>,
+  language: Language
 ): ((root: AtomId, parent: AtomId) => RadicalResult) => {
+  const text =
+    language === 'en'
+      ? {
+          unmatchedBranchBond: 'A bond in a branch path could not be matched.',
+          nestedBranch: 'A nested branch could not be identified.',
+          branch: 'The branch structure could not be identified.',
+        }
+      : {
+          unmatchedBranchBond: '支链路径中存在无法匹配的化学键。',
+          nestedBranch: '无法识别更深层支链。',
+          branch: '无法识别支链结构。',
+        }
   const memo = new Map<string, RadicalResult>()
 
   const collectSubtreeNodes = (root: AtomId, parent: AtomId): Set<AtomId> => {
@@ -334,11 +431,7 @@ const createRadicalNamer = (
     return nodes
   }
 
-  const enumeratePathsFromRoot = (
-    root: AtomId,
-    parent: AtomId,
-    nodeSet: Set<AtomId>,
-  ): AtomId[][] => {
+  const enumeratePathsFromRoot = (root: AtomId, parent: AtomId, nodeSet: Set<AtomId>): AtomId[][] => {
     const paths: AtomId[][] = []
 
     const dfs = (current: AtomId, from: AtomId, prefix: AtomId[]): void => {
@@ -364,7 +457,7 @@ const createRadicalNamer = (
   const evaluateRadicalPath = (
     path: AtomId[],
     parent: AtomId,
-    nodeSet: Set<AtomId>,
+    nodeSet: Set<AtomId>
   ): { ok: true; evaluation: RadicalEvaluation } | { ok: false; reason: string } => {
     const doubleLocants: number[] = []
     const tripleLocants: number[] = []
@@ -375,7 +468,7 @@ const createRadicalNamer = (
       if (!bond) {
         return {
           ok: false,
-          reason: '支链路径中存在无法匹配的化学键。',
+          reason: text.unmatchedBranchBond,
         }
       }
 
@@ -406,7 +499,7 @@ const createRadicalNamer = (
         if (!child.ok) {
           return {
             ok: false,
-            reason: child.reason ?? '无法识别更深层支链。',
+            reason: child.reason ?? text.nestedBranch,
           }
         }
 
@@ -418,13 +511,11 @@ const createRadicalNamer = (
       }
     }
 
-    const formatted = formatSubstituents(substituents)
+    const formatted = formatSubstituents(substituents, language)
     const mergedLocants = [...doubleLocants, ...tripleLocants].sort((left, right) => left - right)
 
-    const baseName = buildRadicalBaseName(path.length, doubleLocants, tripleLocants)
-    const name = formatted.text.length > 0
-      ? `${formatted.text}${baseName}`
-      : baseName
+    const baseName = buildRadicalBaseName(path.length, doubleLocants, tripleLocants, language)
+    const name = formatted.text.length > 0 ? `${formatted.text}${baseName}` : baseName
 
     const baseSortKey = `${getAlkylSortRoot(path.length)}-d${doubleLocants.join('.')}-t${tripleLocants.join('.')}`
 
@@ -508,7 +599,7 @@ const createRadicalNamer = (
         ok: false,
         name: '',
         sortKey: '',
-        reason: '无法识别支链结构。',
+        reason: text.branch,
       }
       memo.set(memoKey, failedResult)
       return failedResult
@@ -531,7 +622,20 @@ const evaluateOrientation = (
   adjacency: ReturnType<typeof buildAdjacency>,
   orientedPath: AtomId[],
   nameRadical: (root: AtomId, parent: AtomId) => RadicalResult,
+  language: Language
 ): { ok: true; evaluation: OrientationEvaluation } | { ok: false; reason: string } => {
+  const text =
+    language === 'en'
+      ? {
+          unmatchedMainBond: 'A bond in the parent chain could not be matched.',
+          branch: 'The branch structure could not be identified.',
+          cyclic: 'A ring or cross-connection was detected; only acyclic hydrocarbons are currently supported.',
+        }
+      : {
+          unmatchedMainBond: '结构中存在无法匹配的主链键。',
+          branch: '无法识别支链结构。',
+          cyclic: '检测到环或交叉连接，当前版本仅支持链状烃。',
+        }
   const pathSet = new Set(orientedPath)
 
   const doubleLocants: number[] = []
@@ -543,7 +647,7 @@ const evaluateOrientation = (
     if (!bond) {
       return {
         ok: false,
-        reason: '结构中存在无法匹配的主链键。',
+        reason: text.unmatchedMainBond,
       }
     }
 
@@ -567,7 +671,7 @@ const evaluateOrientation = (
         if (!radical.ok) {
           return {
             ok: false,
-            reason: radical.reason ?? '无法识别支链结构。',
+            reason: radical.reason ?? text.branch,
           }
         }
 
@@ -582,13 +686,13 @@ const evaluateOrientation = (
       if (neighbor.atomId !== previous && neighbor.atomId !== next) {
         return {
           ok: false,
-          reason: '检测到环或交叉连接，当前版本仅支持链状烃。',
+          reason: text.cyclic,
         }
       }
     }
   }
 
-  const formattedSubstituent = formatSubstituents(substituents)
+  const formattedSubstituent = formatSubstituents(substituents, language)
   const mergedLocants = [...doubleLocants, ...tripleLocants].sort((left, right) => left - right)
 
   return {
@@ -652,10 +756,7 @@ const compareChain = (a: ChainEvaluation, b: ChainEvaluation): number => {
     return a.substituentCount > b.substituentCount ? -1 : 1
   }
 
-  const bySubstituentLocants = compareNumberArray(
-    a.orientation.substituentLocants,
-    b.orientation.substituentLocants,
-  )
+  const bySubstituentLocants = compareNumberArray(a.orientation.substituentLocants, b.orientation.substituentLocants)
 
   if (bySubstituentLocants !== 0) {
     return bySubstituentLocants
@@ -668,15 +769,16 @@ const pickBestOrientation = (
   adjacency: ReturnType<typeof buildAdjacency>,
   path: AtomId[],
   nameRadical: (root: AtomId, parent: AtomId) => RadicalResult,
+  language: Language
 ): { ok: true; evaluation: OrientationEvaluation } | { ok: false; reason: string } => {
-  const forward = evaluateOrientation(adjacency, path, nameRadical)
+  const forward = evaluateOrientation(adjacency, path, nameRadical, language)
   const reversedPath = [...path].reverse()
 
   if (path.length === 1) {
     return forward
   }
 
-  const backward = evaluateOrientation(adjacency, reversedPath, nameRadical)
+  const backward = evaluateOrientation(adjacency, reversedPath, nameRadical, language)
 
   if (forward.ok && backward.ok) {
     return compareOrientation(forward.evaluation, backward.evaluation) <= 0 ? forward : backward
@@ -696,26 +798,47 @@ const pickBestOrientation = (
   }
 }
 
-export const nameHydrocarbon = (molecule: Molecule): NamingResult => {
+export const nameHydrocarbon = (molecule: Molecule, language: Language = 'en'): NamingResult => {
+  const text =
+    language === 'en'
+      ? {
+          drawFirst: 'Draw a structure first.',
+          noParent: 'The parent chain could not be determined.',
+          chainLength: (count: number) => `Parent-chain length: ${count} carbon ${count === 1 ? 'atom' : 'atoms'}`,
+          bonds: (doubleCount: number, tripleCount: number) =>
+            `Double bonds: ${doubleCount}; triple bonds: ${tripleCount}`,
+          locants: (value: string) => `Multiple-bond locants: ${value}`,
+          branches: (count: number) => `Substituents: ${count}`,
+          none: 'none',
+        }
+      : {
+          drawFirst: '请先绘制结构。',
+          noParent: '无法确定主链。',
+          chainLength: (count: number) => `主链长度：${count} 个碳`,
+          bonds: (doubleCount: number, tripleCount: number) => `双键数量：${doubleCount}，三键数量：${tripleCount}`,
+          locants: (value: string) => `重键定位：${value}`,
+          branches: (count: number) => `支链数量：${count}`,
+          none: '无',
+        }
   if (molecule.atoms.length === 0) {
     return {
       supported: false,
       name: '-',
       type: '-',
       analysis: [],
-      reason: '请先绘制结构。',
+      reason: text.drawFirst,
     }
   }
 
   const adjacency = buildAdjacency(molecule)
   const paths = enumerateAllSimplePathsInTree(molecule)
-  const nameRadical = createRadicalNamer(adjacency)
+  const nameRadical = createRadicalNamer(adjacency, language)
 
   let bestChain: ChainEvaluation | null = null
-  let failureReason = '无法确定主链。'
+  let failureReason = text.noParent
 
   for (const path of paths) {
-    const orientation = pickBestOrientation(adjacency, path, nameRadical)
+    const orientation = pickBestOrientation(adjacency, path, nameRadical, language)
     if (!orientation.ok) {
       failureReason = orientation.reason
       continue
@@ -750,20 +873,24 @@ export const nameHydrocarbon = (molecule: Molecule): NamingResult => {
     bestChain.length,
     bestChain.orientation.doubleLocants,
     bestChain.orientation.tripleLocants,
+    language
   )
 
   const parentStartsWithLocant = /^\d/.test(parentName)
-  const fullName = bestChain.orientation.substituentText.length > 0
-    ? `${bestChain.orientation.substituentText}${parentStartsWithLocant ? '-' : ''}${parentName}`
-    : parentName
+  const fullName =
+    bestChain.orientation.substituentText.length > 0
+      ? `${bestChain.orientation.substituentText}${parentStartsWithLocant ? '-' : ''}${parentName}`
+      : parentName
 
   const moleculeType = getMoleculeType(bestChain.doubleCount, bestChain.tripleCount)
 
   const analysis: string[] = [
-    `主链长度：${bestChain.length} 个碳`,
-    `双键数量：${bestChain.doubleCount}，三键数量：${bestChain.tripleCount}`,
-    `重键定位：${bestChain.orientation.mergedLocants.length > 0 ? bestChain.orientation.mergedLocants.join(',') : '无'}`,
-    `支链数量：${bestChain.substituentCount}`,
+    text.chainLength(bestChain.length),
+    text.bonds(bestChain.doubleCount, bestChain.tripleCount),
+    text.locants(
+      bestChain.orientation.mergedLocants.length > 0 ? bestChain.orientation.mergedLocants.join(',') : text.none
+    ),
+    text.branches(bestChain.substituentCount),
   ]
 
   return {

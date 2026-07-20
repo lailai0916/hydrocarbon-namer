@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { AtomId, Bond, Molecule, ToolMode } from '../types/molecule'
+import { useI18n } from '../i18n'
 
 interface Point {
   x: number
@@ -53,16 +54,36 @@ const getBondLines = (a: { x: number; y: number }, b: { x: number; y: number }, 
   if (order === 2) {
     const offset = getParallelOffset(a.x, a.y, b.x, b.y, 3.6)
     return [
-      { x1: a.x + offset.ox, y1: a.y + offset.oy, x2: b.x + offset.ox, y2: b.y + offset.oy },
-      { x1: a.x - offset.ox, y1: a.y - offset.oy, x2: b.x - offset.ox, y2: b.y - offset.oy },
+      {
+        x1: a.x + offset.ox,
+        y1: a.y + offset.oy,
+        x2: b.x + offset.ox,
+        y2: b.y + offset.oy,
+      },
+      {
+        x1: a.x - offset.ox,
+        y1: a.y - offset.oy,
+        x2: b.x - offset.ox,
+        y2: b.y - offset.oy,
+      },
     ]
   }
 
   const offset = getParallelOffset(a.x, a.y, b.x, b.y, 5.2)
   return [
-    { x1: a.x + offset.ox, y1: a.y + offset.oy, x2: b.x + offset.ox, y2: b.y + offset.oy },
+    {
+      x1: a.x + offset.ox,
+      y1: a.y + offset.oy,
+      x2: b.x + offset.ox,
+      y2: b.y + offset.oy,
+    },
     line,
-    { x1: a.x - offset.ox, y1: a.y - offset.oy, x2: b.x - offset.ox, y2: b.y - offset.oy },
+    {
+      x1: a.x - offset.ox,
+      y1: a.y - offset.oy,
+      x2: b.x - offset.ox,
+      y2: b.y - offset.oy,
+    },
   ]
 }
 
@@ -79,15 +100,17 @@ export function MoleculeCanvas({
   onAtomDrag,
   onAtomDragEnd,
 }: MoleculeCanvasProps) {
+  const { t } = useI18n()
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
-  const canvasCursor = activeTool === 'add-carbon'
-    ? 'cursor-copy'
-    : activeTool.startsWith('bond')
-      ? 'cursor-crosshair'
-      : activeTool === 'delete'
-        ? 'cursor-not-allowed'
-        : 'cursor-default'
+  const canvasCursor =
+    activeTool === 'add-carbon'
+      ? 'cursor-copy'
+      : activeTool.startsWith('bond')
+        ? 'cursor-crosshair'
+        : activeTool === 'delete'
+          ? 'cursor-not-allowed'
+          : 'cursor-default'
 
   const atomMap = new Map(molecule.atoms.map((atom) => [atom.id, atom]))
 
@@ -160,10 +183,7 @@ export function MoleculeCanvas({
     }
 
     if (!dragState.moved) {
-      const distance = Math.hypot(
-        point.x - dragState.startPoint.x,
-        point.y - dragState.startPoint.y,
-      )
+      const distance = Math.hypot(point.x - dragState.startPoint.x, point.y - dragState.startPoint.y)
 
       if (distance < 4) {
         return
@@ -216,16 +236,18 @@ export function MoleculeCanvas({
   }
 
   return (
-    <div className="h-full min-h-[520px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+    <div className="h-full min-h-[520px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         className={`h-full w-full touch-none ${canvasCursor}`}
         onPointerUp={handleCanvasPointerUp}
+        role="application"
+        aria-label={t('canvas.label')}
       >
         <defs>
           <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#f1f1f3" strokeWidth="1" />
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="var(--canvas-grid)" strokeWidth="1" />
           </pattern>
         </defs>
         <rect width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="url(#grid)" />
@@ -239,7 +261,7 @@ export function MoleculeCanvas({
 
           const lines = getBondLines(atomA, atomB, bond.order)
           const active = selectedBondId === bond.id
-          const stroke = active ? '#0f172a' : '#27272a'
+          const stroke = active ? 'var(--canvas-active)' : 'var(--canvas-ink)'
 
           return (
             <g key={bond.id}>
@@ -273,7 +295,7 @@ export function MoleculeCanvas({
           const selected = selectedAtomId === atom.id
           const pending = pendingBondStartId === atom.id
           const highlighted = selected || pending
-          const ringStroke = pending ? '#2563eb' : '#0f172a'
+          const ringStroke = pending ? 'var(--canvas-pending)' : 'var(--canvas-active)'
 
           return (
             <g key={atom.id}>
@@ -293,8 +315,8 @@ export function MoleculeCanvas({
                 cx={atom.x}
                 cy={atom.y}
                 r={ATOM_RADIUS}
-                fill="#ffffff"
-                stroke="#d4d4d8"
+                fill="var(--canvas-atom)"
+                stroke="var(--canvas-atom-border)"
                 strokeWidth={1.5}
                 onPointerDown={(event) => handleAtomPointerDown(event, atom.id)}
                 onPointerMove={handleAtomPointerMove}
@@ -306,7 +328,7 @@ export function MoleculeCanvas({
                 y={atom.y + 0.5}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="#27272a"
+                fill="var(--canvas-ink)"
                 style={{
                   fontWeight: 700,
                   fontSize: 12,

@@ -1,18 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { InfoPanel } from './components/InfoPanel'
 import { MoleculeCanvas } from './components/MoleculeCanvas'
 import { Toolbar } from './components/Toolbar'
 import { analyzeMolecule } from './engine/analysisEngine'
-import {
-  addCarbonAtom,
-  createEmptyMolecule,
-  moveAtom,
-  removeAtom,
-  removeBond,
-  upsertBond,
-} from './model/moleculeModel'
+import { addCarbonAtom, createEmptyMolecule, moveAtom, removeAtom, removeBond, upsertBond } from './model/moleculeModel'
 import type { AtomId, BondOrder, ToolMode } from './types/molecule'
 import { useHistory } from './hooks/useHistory'
+import { createTranslator, I18nContext, useI18n, type Language } from './i18n'
+import { usePreferences, type ThemeMode } from './hooks/usePreferences'
 
 const getBondOrderFromTool = (tool: ToolMode): BondOrder | null => {
   if (tool === 'bond-1') {
@@ -30,7 +25,68 @@ const getBondOrderFromTool = (tool: ToolMode): BondOrder | null => {
   return null
 }
 
-function App() {
+type PreferenceControlsProps = {
+  language: Language
+  onLanguageChange: (language: Language) => void
+  theme: ThemeMode
+  onThemeChange: (theme: ThemeMode) => void
+}
+
+function PreferenceControls({ language, onLanguageChange, theme, onThemeChange }: PreferenceControlsProps) {
+  const { t } = useI18n()
+  const buttonClass = (active: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+      active
+        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
+        : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
+    }`
+
+  return (
+    <div className="flex flex-wrap gap-3 sm:justify-end">
+      <div>
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+          {t('language.label')}
+        </p>
+        <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-800/80">
+          {(['en', 'zh'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={buttonClass(language === value)}
+              onClick={() => onLanguageChange(value)}
+              aria-pressed={language === value}
+            >
+              {t(value === 'en' ? 'language.en' : 'language.zh')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+          {t('theme.label')}
+        </p>
+        <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-800/80">
+          {(['system', 'light', 'dark'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={buttonClass(theme === value)}
+              onClick={() => onThemeChange(value)}
+              aria-pressed={theme === value}
+            >
+              {t(`theme.${value}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type AppContentProps = PreferenceControlsProps
+
+function AppContent({ language, onLanguageChange, theme, onThemeChange }: AppContentProps) {
+  const { t } = useI18n()
   const history = useHistory(createEmptyMolecule())
   const molecule = history.present
 
@@ -39,17 +95,14 @@ function App() {
   const [selectedBondId, setSelectedBondId] = useState<string | null>(null)
   const [pendingBondStartId, setPendingBondStartId] = useState<AtomId | null>(null)
 
-  const validSelectedAtomId = selectedAtomId && molecule.atoms.some((atom) => atom.id === selectedAtomId)
-    ? selectedAtomId
-    : null
-  const validSelectedBondId = selectedBondId && molecule.bonds.some((bond) => bond.id === selectedBondId)
-    ? selectedBondId
-    : null
-  const validPendingBondStartId = pendingBondStartId && molecule.atoms.some((atom) => atom.id === pendingBondStartId)
-    ? pendingBondStartId
-    : null
+  const validSelectedAtomId =
+    selectedAtomId && molecule.atoms.some((atom) => atom.id === selectedAtomId) ? selectedAtomId : null
+  const validSelectedBondId =
+    selectedBondId && molecule.bonds.some((bond) => bond.id === selectedBondId) ? selectedBondId : null
+  const validPendingBondStartId =
+    pendingBondStartId && molecule.atoms.some((atom) => atom.id === pendingBondStartId) ? pendingBondStartId : null
 
-  const analysis = useMemo(() => analyzeMolecule(molecule), [molecule])
+  const analysis = useMemo(() => analyzeMolecule(molecule, language), [molecule, language])
 
   const handleToolChange = (tool: ToolMode) => {
     setActiveTool(tool)
@@ -194,13 +247,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-5 text-zinc-900 sm:px-6 sm:py-6">
+    <div className="min-h-screen bg-zinc-50 px-4 py-5 text-zinc-900 transition-colors dark:bg-zinc-950 dark:text-zinc-100 sm:px-6 sm:py-6">
       <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
-          <h1 className="text-lg font-semibold">烃类系统命名交互工具</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            仅支持链状碳氢化合物：烷烃、烯烃、炔烃与烯炔烃。超范围结构会明确拒绝命名。
-          </p>
+        <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">{t('app.title')}</h1>
+            <p className="mt-1 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">{t('app.subtitle')}</p>
+          </div>
+          <PreferenceControls
+            language={language}
+            onLanguageChange={onLanguageChange}
+            theme={theme}
+            onThemeChange={onThemeChange}
+          />
         </div>
 
         <Toolbar
@@ -228,14 +287,26 @@ function App() {
             onAtomDragEnd={handleAtomDragEnd}
           />
 
-          <InfoPanel
-            analysis={analysis}
-            atomCount={molecule.atoms.length}
-            bondCount={molecule.bonds.length}
-          />
+          <InfoPanel analysis={analysis} atomCount={molecule.atoms.length} bondCount={molecule.bonds.length} />
         </main>
       </div>
     </div>
+  )
+}
+
+function App() {
+  const { language, setLanguage, theme, setTheme } = usePreferences()
+  const translator = useMemo(() => createTranslator(language), [language])
+  const i18n = useMemo(() => ({ language, t: translator }), [language, translator])
+
+  useEffect(() => {
+    document.title = translator('app.title')
+  }, [translator])
+
+  return (
+    <I18nContext.Provider value={i18n}>
+      <AppContent language={language} onLanguageChange={setLanguage} theme={theme} onThemeChange={setTheme} />
+    </I18nContext.Provider>
   )
 }
 
