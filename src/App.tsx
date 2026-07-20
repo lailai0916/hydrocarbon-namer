@@ -7,7 +7,7 @@ import { addCarbonAtom, createEmptyMolecule, moveAtom, removeAtom, removeBond, u
 import type { AtomId, BondOrder, ToolMode } from './types/molecule'
 import { useHistory } from './hooks/useHistory'
 import { createTranslator, I18nContext, useI18n, type Language } from './i18n'
-import { usePreferences, type ThemeMode } from './hooks/usePreferences'
+import { usePreferences, type Theme } from './hooks/usePreferences'
 
 const getBondOrderFromTool = (tool: ToolMode): BondOrder | null => {
   if (tool === 'bond-1') {
@@ -28,64 +28,51 @@ const getBondOrderFromTool = (tool: ToolMode): BondOrder | null => {
 type PreferenceControlsProps = {
   language: Language
   onLanguageChange: (language: Language) => void
-  theme: ThemeMode
-  onThemeChange: (theme: ThemeMode) => void
+  theme: Theme
+  onThemeToggle: () => void
 }
 
-function PreferenceControls({ language, onLanguageChange, theme, onThemeChange }: PreferenceControlsProps) {
+function PreferenceControls({ language, onLanguageChange, theme, onThemeToggle }: PreferenceControlsProps) {
   const { t } = useI18n()
-  const buttonClass = (active: boolean) =>
-    `rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-      active
-        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
-        : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
-    }`
+  const buttonClass =
+    'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-transparent px-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-200 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:focus-visible:outline-zinc-100'
 
   return (
-    <div className="flex flex-wrap gap-3 sm:justify-end">
-      <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-          {t('language.label')}
-        </p>
-        <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-800/80">
-          {(['en', 'zh'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={buttonClass(language === value)}
-              onClick={() => onLanguageChange(value)}
-              aria-pressed={language === value}
-            >
-              {t(value === 'en' ? 'language.en' : 'language.zh')}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-          {t('theme.label')}
-        </p>
-        <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-800/80">
-          {(['system', 'light', 'dark'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={buttonClass(theme === value)}
-              onClick={() => onThemeChange(value)}
-              aria-pressed={theme === value}
-            >
-              {t(`theme.${value}`)}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="flex items-center gap-1 sm:justify-end">
+      <button
+        type="button"
+        className={buttonClass}
+        onClick={() => onLanguageChange(language === 'zh' ? 'en' : 'zh')}
+        aria-label={t('preference.switchLanguage')}
+        title={t('preference.switchLanguage')}
+      >
+        {language === 'zh' ? '中' : 'EN'}
+      </button>
+      <button
+        type="button"
+        className={buttonClass}
+        onClick={onThemeToggle}
+        aria-label={t('preference.toggleTheme')}
+        title={t('preference.toggleTheme')}
+      >
+        {theme === 'dark' ? (
+          <svg className="h-[18px] w-[18px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" />
+          </svg>
+        ) : (
+          <svg className="h-[18px] w-[18px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+          </svg>
+        )}
+      </button>
     </div>
   )
 }
 
 type AppContentProps = PreferenceControlsProps
 
-function AppContent({ language, onLanguageChange, theme, onThemeChange }: AppContentProps) {
+function AppContent({ language, onLanguageChange, theme, onThemeToggle }: AppContentProps) {
   const { t } = useI18n()
   const history = useHistory(createEmptyMolecule())
   const molecule = history.present
@@ -252,13 +239,13 @@ function AppContent({ language, onLanguageChange, theme, onThemeChange }: AppCon
         <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold">{t('app.title')}</h1>
-            <p className="mt-1 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">{t('app.subtitle')}</p>
+            <p className="mt-1 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">{t('app.description')}</p>
           </div>
           <PreferenceControls
             language={language}
             onLanguageChange={onLanguageChange}
             theme={theme}
-            onThemeChange={onThemeChange}
+            onThemeToggle={onThemeToggle}
           />
         </div>
 
@@ -295,17 +282,19 @@ function AppContent({ language, onLanguageChange, theme, onThemeChange }: AppCon
 }
 
 function App() {
-  const { language, setLanguage, theme, setTheme } = usePreferences()
+  const { language, setLanguage, theme, toggleTheme } = usePreferences()
   const translator = useMemo(() => createTranslator(language), [language])
   const i18n = useMemo(() => ({ language, t: translator }), [language, translator])
 
   useEffect(() => {
     document.title = translator('app.title')
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+    if (description) description.content = translator('app.description')
   }, [translator])
 
   return (
     <I18nContext.Provider value={i18n}>
-      <AppContent language={language} onLanguageChange={setLanguage} theme={theme} onThemeChange={setTheme} />
+      <AppContent language={language} onLanguageChange={setLanguage} theme={theme} onThemeToggle={toggleTheme} />
     </I18nContext.Provider>
   )
 }

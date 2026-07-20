@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>烃命名器</h1>
+  <h1>烃类命名器</h1>
   <p><a href="README.md">English</a> | 简体中文</p>
   <p>
     <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/hydrocarbon-namer/deploy-pages.yml?style=flat-square" alt="部署状态" />
@@ -11,7 +11,7 @@
 
 ## 网站简介
 
-一个基于 React + TypeScript + Vite 的静态网页应用，用于绘制链状碳氢化合物并给出系统命名结果。
+用于绘制链状烃并生成系统命名的交互式网页应用。
 
 ## 网站特性
 
@@ -20,7 +20,7 @@
 - 支持撤销、重做、清空
 - 仅支持链状烃：烷烃、烯烃、炔烃与烯炔烃
 - 界面、命名与分析完整支持英文和简体中文，默认使用英文
-- 默认跟随系统主题，也可明确选择浅色或深色模式
+- 默认跟随系统主题，并提供简洁的深浅主题切换按钮
 
 ## 快速开始
 

@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Language } from '../i18n'
 
-export type ThemeMode = 'system' | 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 
 const LANGUAGE_KEY = 'hydrocarbon-namer-language'
-const THEME_KEY = 'hydrocarbon-namer-theme'
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
 const readLanguage = (): Language => (localStorage.getItem(LANGUAGE_KEY) === 'zh' ? 'zh' : 'en')
-
-const readTheme = (): ThemeMode => {
-  const stored = localStorage.getItem(THEME_KEY)
-  return stored === 'light' || stored === 'dark' ? stored : 'system'
-}
+const systemTheme = (): Theme => (window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light')
 
 export const usePreferences = () => {
   const [language, setLanguage] = useState<Language>(readLanguage)
-  const [theme, setTheme] = useState<ThemeMode>(readTheme)
+  const [theme, setTheme] = useState<Theme>(systemTheme)
 
   useEffect(() => {
     localStorage.setItem(LANGUAGE_KEY, language)
@@ -24,18 +19,28 @@ export const usePreferences = () => {
   }, [language])
 
   useEffect(() => {
-    const media = window.matchMedia(DARK_QUERY)
-    const applyTheme = () => {
-      const resolved = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme
-      document.documentElement.dataset.theme = resolved
-      document.documentElement.dataset.themeMode = theme
-    }
-
-    localStorage.setItem(THEME_KEY, theme)
-    applyTheme()
-    media.addEventListener('change', applyTheme)
-    return () => media.removeEventListener('change', applyTheme)
+    document.documentElement.dataset.theme = theme
   }, [theme])
 
-  return { language, setLanguage, theme, setTheme }
+  useEffect(() => {
+    const media = window.matchMedia(DARK_QUERY)
+    const syncWithSystem = () => setTheme(systemTheme())
+    const syncWhenVisible = () => {
+      if (document.visibilityState === 'visible') syncWithSystem()
+    }
+
+    syncWithSystem()
+    media.addEventListener('change', syncWithSystem)
+    document.addEventListener('visibilitychange', syncWhenVisible)
+    return () => {
+      media.removeEventListener('change', syncWithSystem)
+      document.removeEventListener('visibilitychange', syncWhenVisible)
+    }
+  }, [])
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+  }, [])
+
+  return { language, setLanguage, theme, toggleTheme }
 }

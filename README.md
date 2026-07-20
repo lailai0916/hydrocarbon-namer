@@ -11,7 +11,7 @@
 
 ## Website Introduction
 
-A static web app built with React + TypeScript + Vite for drawing chain hydrocarbons and producing their systematic names.
+An interactive web app for drawing chain hydrocarbons and generating their systematic names.
 
 ## Website Features
 
@@ -20,7 +20,7 @@ A static web app built with React + TypeScript + Vite for drawing chain hydrocar
 - Undo, redo, and clear
 - Chain hydrocarbons only: alkanes, alkenes, alkynes, and enynes
 - Complete English and Simplified Chinese interface and naming output, with English as the default
-- System theme by default, plus explicit light and dark modes
+- System theme by default, plus a compact light/dark toggle
 
 ## Getting Started
 
